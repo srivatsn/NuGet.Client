@@ -57,7 +57,7 @@ namespace NuGet.Commands
 
         public async Task<int> ExecuteCommandAsync(
             IEnumerable<string> packagesToSign,
-            AuthorSignPackageRequest signPackageRequest,
+            SignPackageRequest signPackageRequest,
             string timestamper,
             ILogger logger,
             string outputDirectory,
