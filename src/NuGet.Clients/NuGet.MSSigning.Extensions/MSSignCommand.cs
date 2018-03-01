@@ -27,7 +27,7 @@ namespace NuGet.MSSigning.Extensions
 
         public override async Task ExecuteCommandAsync()
         {
-            using (var signRequest = GetSignRequest())
+            using (var signRequest = GetAuthorSignRequest())
             {
                 var packages = GetPackages();
                 var signCommandRunner = new SignCommandRunner();

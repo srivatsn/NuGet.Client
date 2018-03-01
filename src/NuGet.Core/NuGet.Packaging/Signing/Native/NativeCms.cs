@@ -4,6 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+#if IS_DESKTOP
+using System.Security.Cryptography;
+using System.Security.Cryptography.Pkcs;
+#endif
+using NuGet.Common;
+
 
 namespace NuGet.Packaging.Signing
 {
@@ -242,6 +248,23 @@ namespace NuGet.Packaging.Signing
                 }
             }
         }
+#if IS_DESKTOP
+        internal unsafe void AddCounterSignature(CmsSigner cmsSigner, CngKey privateKey)
+        {
+            using (var hb = new HeapBlockRetainer())
+            {
+                var signerInfo = NativeUtilities.CreateSignerInfo(cmsSigner, privateKey, hb);
+
+                NativeUtilities.ThrowIfFailed(NativeMethods.CryptMsgCountersign(
+                    _handle,
+                    dwIndex: 0,
+                    cCountersigners: 1,
+                    rgCountersigners: signerInfo));
+
+                AddCertificates(CertificateUtility.GetRawDataForCollection(cmsSigner.Certificates));
+            }
+        }
+#endif
 
         internal unsafe void AddTimestamp(byte[] timeStampCms)
         {

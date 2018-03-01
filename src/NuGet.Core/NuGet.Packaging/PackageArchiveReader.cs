@@ -334,7 +334,7 @@ namespace NuGet.Packaging
 #if IS_DESKTOP
                 if (primarySignature.Type == SignatureType.Repository)
                 {
-                    throw new SignatureException(NuGetLogCode.NU3033, Strings.Error_RepositorySignatureShouldNotHaveARepositoryCountersignature);
+                    throw new SignatureException(NuGetLogCode.NU3033, Strings.Error_RepositorySignatureMustNotHaveARepositoryCountersignature);
                 }
 
                 if (RepositoryCountersignature.HasRepositoryCounterSignature(primarySignature))

@@ -22,11 +22,6 @@ namespace NuGet.Packaging.Signing
         public IReadOnlyList<string> PackageOwners { get; }
 
         /// <summary>
-        /// Primary signature to countersign if the repository signature is a countersignature.
-        /// </summary>
-        public PrimarySignature PrimarySignature { get; set; }
-
-        /// <summary>
         /// Gets the signature type.
         /// </summary>
         public override SignatureType SignatureType => SignatureType.Repository;

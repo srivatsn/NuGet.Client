@@ -80,23 +80,6 @@ namespace NuGet.Packaging.Test
             }
         }
 
-        [Fact]
-        public void Constructor_WithInvalidSignaturePlacement_Throws()
-        {
-            using (var certificate = new X509Certificate2())
-            {
-                var exception = Assert.Throws<ArgumentException>(
-                    () => new RepositorySignPackageRequest(
-                        certificate,
-                        HashAlgorithmName.SHA256,
-                        HashAlgorithmName.SHA256,
-                        (SignaturePlacement)int.MinValue,
-                        _validV3ServiceIndexUrl,
-                        _validPackageOwners));
-
-                Assert.Equal("signaturePlacement", exception.ParamName);
-            }
-        }
 
         [Fact]
         public void Constructor_WhenV3ServiceIndexUrlNull_Throws()
