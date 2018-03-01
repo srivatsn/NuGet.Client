@@ -323,5 +323,29 @@ namespace NuGet.Packaging
                 return Task.FromResult(hash);
             }
         }
+
+        public async Task<SignaturePlacement> GetAvailableSignaturePlacementAsync(CancellationToken token)
+        {
+
+            var primarySignature = await GetPrimarySignatureAsync(token);
+
+            if (primarySignature != null)
+            {
+#if IS_DESKTOP
+                if (primarySignature.Type == SignatureType.Repository)
+                {
+                    throw new SignatureException(NuGetLogCode.NU3033, Strings.Error_RepositorySignatureShouldNotHaveARepositoryCountersignature);
+                }
+
+                if (RepositoryCountersignature.HasRepositoryCounterSignature(primarySignature))
+                {
+                    throw new SignatureException(NuGetLogCode.NU3001, Strings.SignedPackagePackageAlreadyCountersigned);
+                }
+#endif
+                return SignaturePlacement.Countersignature;
+            }
+
+            return SignaturePlacement.PrimarySignature;
+        }
     }
 }

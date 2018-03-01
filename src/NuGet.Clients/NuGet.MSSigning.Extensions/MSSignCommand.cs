@@ -1,20 +1,11 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using NuGet.CommandLine;
 using NuGet.Commands;
-using NuGet.Common;
 using NuGet.Packaging.Signing;
-using NuGet.Protocol;
 
 namespace NuGet.MSSigning.Extensions
 {
