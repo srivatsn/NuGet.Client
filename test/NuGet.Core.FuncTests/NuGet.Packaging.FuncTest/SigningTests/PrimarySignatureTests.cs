@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -26,7 +25,7 @@ namespace NuGet.Packaging.FuncTest
     public class PrimarySignatureTests
     {
         private SigningTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
         private IList<ISignatureVerificationProvider> _trustProviders;
         private SigningSpecifications _signingSpecifications;
 
@@ -45,12 +44,12 @@ namespace NuGet.Packaging.FuncTest
             var nupkg = new SimpleTestPackageContext();
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
 
-            using (var cert = new X509Certificate2(_trustedTestCert.Source.Cert))
             using (var dir = TestDirectory.Create())
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 // Act
                 var signedPackagePath = await SignedArchiveTestUtility.CreateSignedAndTimeStampedPackageAsync(
-                    cert,
+                    certificate,
                     nupkg,
                     dir,
                     timestampService.Url);
@@ -74,10 +73,10 @@ namespace NuGet.Packaging.FuncTest
             var nupkg = new SimpleTestPackageContext();
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 // Act
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 // Assert
                 using (var stream = File.OpenRead(signedPackagePath))
@@ -97,7 +96,7 @@ namespace NuGet.Packaging.FuncTest
             var packageContext = new SimpleTestPackageContext();
 
             using (var directory = TestDirectory.Create())
-            using (var certificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 var packageFilePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(
                     certificate,
@@ -142,12 +141,12 @@ namespace NuGet.Packaging.FuncTest
         [CIOnlyFact]
         public async Task Load_WithReissuedSigningCertificate_Throws()
         {
-            var certificates = _testFixture.TrustedTestCertificateWithReissuedCertificate;
+            var storeCertificates = _testFixture.TrustedTestCertificateWithReissuedCertificate;
             var packageContext = new SimpleTestPackageContext();
 
             using (var directory = TestDirectory.Create())
-            using (var certificate1 = new X509Certificate2(certificates[0].Source.Cert))
-            using (var certificate2 = new X509Certificate2(certificates[1].Source.Cert))
+            using (var certificate1 = storeCertificates[0].Source.GetCertificate())
+            using (var certificate2 = storeCertificates[1].Source.GetCertificate())
             {
                 var packageFilePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(
                     certificate1,

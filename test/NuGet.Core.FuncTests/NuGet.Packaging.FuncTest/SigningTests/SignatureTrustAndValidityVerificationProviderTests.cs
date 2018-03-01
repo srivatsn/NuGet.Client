@@ -30,7 +30,7 @@ namespace NuGet.Packaging.FuncTest
         private SigningSpecifications _specification => SigningSpecifications.V1;
 
         private SigningTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
         private TestCertificate _untrustedTestCertificate;
         private IList<ISignatureVerificationProvider> _trustProviders;
 
@@ -52,9 +52,9 @@ namespace NuGet.Packaging.FuncTest
             var nupkg = new SimpleTestPackageContext();
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
                 var verifier = new PackageSignatureVerifier(_trustProviders, SignedPackageVerifierSettings.VerifyCommandDefaultPolicy);
                 using (var packageReader = new PackageArchiveReader(signedPackagePath))
                 {
@@ -77,10 +77,10 @@ namespace NuGet.Packaging.FuncTest
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 var signedPackagePath = await SignedArchiveTestUtility.CreateSignedAndTimeStampedPackageAsync(
-                    testCertificate,
+                    certificate,
                     nupkg,
                     dir,
                     timestampService.Url);
@@ -105,7 +105,7 @@ namespace NuGet.Packaging.FuncTest
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
 
             using (var directory = TestDirectory.Create())
-            using (var certificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 using (var request = new AuthorSignPackageRequest(certificate, HashAlgorithmName.SHA512, HashAlgorithmName.SHA256))
                 {
@@ -257,7 +257,7 @@ namespace NuGet.Packaging.FuncTest
                 allowUnknownRevocation: false);
 
             using (var directory = TestDirectory.Create())
-            using (var certificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 var packageContext = new SimpleTestPackageContext();
                 var unsignedPackageFile = packageContext.CreateAsFile(directory, "Package.nupkg");
@@ -303,9 +303,9 @@ namespace NuGet.Packaging.FuncTest
                 allowUnknownRevocation: false);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
                 var verifier = new PackageSignatureVerifier(_trustProviders, setting);
                 using (var packageReader = new PackageArchiveReader(signedPackagePath))
                 {
@@ -330,10 +330,10 @@ namespace NuGet.Packaging.FuncTest
             var timestampService = await _testFixture.GetDefaultTrustedTimestampServiceAsync();
 
             using (var directory = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
                 var packageFilePath = await SignedArchiveTestUtility.CreateSignedAndTimeStampedPackageAsync(
-                    testCertificate,
+                    certificate,
                     package,
                     directory,
                     timestampService.Url);
@@ -453,7 +453,7 @@ namespace NuGet.Packaging.FuncTest
                 var rootCertificate = SignatureUtility.GetPrimarySignatureCertificates(signature).Last();
 
                 // Trust the root CA of the signing certificate.
-                using (var testCertificate = TrustedTestCert.Create(
+                using (var certificate = StoreCertificate.Create(
                     rootCertificate,
                     StoreName.Root,
                     StoreLocation.LocalMachine,
@@ -493,8 +493,8 @@ namespace NuGet.Packaging.FuncTest
             var verificationProvider = new SignatureTrustAndValidityVerificationProvider();
 
             using (var package = new PackageArchiveReader(nupkg.CreateAsStream(), leaveStreamOpen: false))
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
-            using (var signatureRequest = new AuthorSignPackageRequest(testCertificate, HashAlgorithmName.SHA256))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
+            using (var signatureRequest = new AuthorSignPackageRequest(certificate, HashAlgorithmName.SHA256))
             {
                 var signature = await SignedArchiveTestUtility.CreatePrimarySignatureForPackageAsync(signatureProvider, package, signatureRequest, testLogger);
                 var timestampedSignature = await SignedArchiveTestUtility.TimestampPrimarySignature(timestampProvider, signatureRequest, signature, testLogger);
@@ -526,7 +526,7 @@ namespace NuGet.Packaging.FuncTest
                 allowNoTimestamp: true,
                 allowUnknownRevocation: false);
 
-            using (var test = await GetTrustResultAsyncTest.CreateAsync(settings, _untrustedTestCertificate.Cert))
+            using (var test = await GetTrustResultAsyncTest.CreateAsync(_trustedTestCert, settings))
             {
                 var result = await test.Provider.GetTrustResultAsync(test.Package, test.PrimarySignature, settings, CancellationToken.None);
 
@@ -551,7 +551,7 @@ namespace NuGet.Packaging.FuncTest
                 allowNoTimestamp: true,
                 allowUnknownRevocation: false);
 
-            using (var test = await GetTrustResultAsyncTest.CreateAsync(settings, _untrustedTestCertificate.Cert))
+            using (var test = await GetTrustResultAsyncTest.CreateAsync(_trustedTestCert, settings))
             {
                 var result = await test.Provider.GetTrustResultAsync(test.Package, test.PrimarySignature, settings, CancellationToken.None);
 
@@ -576,7 +576,7 @@ namespace NuGet.Packaging.FuncTest
                allowNoTimestamp: true,
                allowUnknownRevocation: false);
 
-            using (var test = await GetTrustResultAsyncTest.CreateAsync(settings, _trustedTestCert.Source.Cert))
+            using (var test = await GetTrustResultAsyncTest.CreateAsync(_trustedTestCert, settings))
             {
                 var result = await test.Provider.GetTrustResultAsync(test.Package, test.PrimarySignature, settings, CancellationToken.None);
 
@@ -664,9 +664,11 @@ namespace NuGet.Packaging.FuncTest
                 }
             }
 
-            internal static async Task<GetTrustResultAsyncTest> CreateAsync(SignedPackageVerifierSettings settings, X509Certificate2 certificate)
+            internal static async Task<GetTrustResultAsyncTest> CreateAsync(
+                IStoreCertificate<TestCertificate> storeCertificate,
+                SignedPackageVerifierSettings settings)
             {
-                using (var certificateClone = new X509Certificate2(certificate))
+                using (var certificate = storeCertificate.Source.GetCertificate())
                 {
                     var directory = TestDirectory.Create();
                     var packageContext = new SimpleTestPackageContext();
@@ -674,7 +676,7 @@ namespace NuGet.Packaging.FuncTest
                     var signedPackageFile = await SignedArchiveTestUtility.SignPackageFileWithBasicSignedCmsAsync(
                         directory,
                         unsignedPackageFile,
-                        certificateClone);
+                        certificate);
                     var package = new SignedPackageArchive(signedPackageFile.OpenRead(), new MemoryStream());
                     var primarySignature = await package.GetPrimarySignatureAsync(CancellationToken.None);
 

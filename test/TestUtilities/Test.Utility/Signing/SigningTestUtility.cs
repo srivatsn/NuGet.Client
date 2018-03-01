@@ -125,52 +125,57 @@ namespace Test.Utility.Signing
         /// <param name="crlLocalUri">Uri for crl local</param>
         /// <param name="configureLeafCrl">Indicates if leaf crl should be configured</param>
         /// <returns>List of certificates representing a chain of certificates.</returns>
-        public static IList<TrustedTestCert<TestCertificate>> GenerateCertificateChain(int length, string crlServerUri, string crlLocalUri, bool configureLeafCrl = true)
+        public static IList<StoreCertificate<TestCertificate>> GenerateCertificateChain(int length, string crlServerUri, string crlLocalUri, bool configureLeafCrl = true)
         {
-            var certChain = new List<TrustedTestCert<TestCertificate>>();
+            var certChain = new List<StoreCertificate<TestCertificate>>();
             var actionGenerator = CertificateModificationGeneratorForCodeSigningEkuCert;
-            TrustedTestCert<TestCertificate> issuer = null;
-            TrustedTestCert<TestCertificate> cert = null;
+            StoreCertificate<TestCertificate> issuer = null;
+            StoreCertificate<TestCertificate> cert = null;
 
             for (var i = 0; i < length; i++)
             {
                 if (i == 0) // root CA cert
                 {
-                    var chainCertificateRequest = new ChainCertificateRequest()
+                    using (var chainCertificateRequest = new ChainCertificateRequest()
                     {
                         CrlLocalBaseUri = crlLocalUri,
                         CrlServerBaseUri = crlServerUri,
                         IsCA = true
-                    };
+                    })
+                    {
+                        cert = TestCertificate.Generate(actionGenerator, chainCertificateRequest).WithPrivateKeyAndTrust(StoreName.Root, StoreLocation.LocalMachine);
+                    }
 
-                    cert = TestCertificate.Generate(actionGenerator, chainCertificateRequest).WithPrivateKeyAndTrust(StoreName.Root, StoreLocation.LocalMachine);
                     issuer = cert;
                 }
                 else if (i < length - 1) // intermediate CA cert
                 {
-                    var chainCertificateRequest = new ChainCertificateRequest()
+                    using (var chainCertificateRequest = new ChainCertificateRequest()
                     {
                         CrlLocalBaseUri = crlLocalUri,
                         CrlServerBaseUri = crlServerUri,
                         IsCA = true,
-                        Issuer = issuer.Source.Cert
-                    };
+                        Issuer = issuer.Source.GetCertificate()
+                    })
+                    {
+                        cert = TestCertificate.Generate(actionGenerator, chainCertificateRequest).WithPrivateKeyAndTrust(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+                    }
 
-                    cert = TestCertificate.Generate(actionGenerator, chainCertificateRequest).WithPrivateKeyAndTrust(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
                     issuer = cert;
                 }
                 else // leaf cert
                 {
-                    var chainCertificateRequest = new ChainCertificateRequest()
+                    using (var chainCertificateRequest = new ChainCertificateRequest()
                     {
                         CrlLocalBaseUri = crlLocalUri,
                         CrlServerBaseUri = crlServerUri,
                         IsCA = false,
                         ConfigureCrl = configureLeafCrl,
-                        Issuer = issuer.Source.Cert
-                    };
-
-                    cert = TestCertificate.Generate(actionGenerator, chainCertificateRequest).WithPrivateKeyAndTrust(StoreName.My, StoreLocation.LocalMachine);
+                        Issuer = issuer.Source.GetCertificate()
+                    })
+                    {
+                        cert = TestCertificate.Generate(actionGenerator, chainCertificateRequest).WithPrivateKeyAndTrust(StoreName.My, StoreLocation.LocalMachine);
+                    }
                 }
 
                 certChain.Add(cert);
@@ -469,7 +474,7 @@ namespace Test.Utility.Signing
             return new X509Certificate2(cert.Export(X509ContentType.Pfx, pass), pass, X509KeyStorageFlags.PersistKeySet);
         }
 
-        public static TrustedTestCert<TestCertificate> GenerateTrustedTestCertificate()
+        public static StoreCertificate<TestCertificate> GenerateTrustedTestCertificate()
         {
             var actionGenerator = CertificateModificationGeneratorForCodeSigningEkuCert;
 
@@ -479,7 +484,7 @@ namespace Test.Utility.Signing
             return TestCertificate.Generate(actionGenerator).WithTrust(StoreName.Root, StoreLocation.LocalMachine);
         }
 
-        public static TrustedTestCert<TestCertificate> GenerateTrustedTestCertificateExpired()
+        public static StoreCertificate<TestCertificate> GenerateTrustedTestCertificateExpired()
         {
             var actionGenerator = CertificateModificationGeneratorExpiredCert;
 
@@ -489,7 +494,7 @@ namespace Test.Utility.Signing
             return TestCertificate.Generate(actionGenerator).WithTrust(StoreName.Root, StoreLocation.LocalMachine);
         }
 
-        public static TrustedTestCert<TestCertificate> GenerateTrustedTestCertificateNotYetValid()
+        public static StoreCertificate<TestCertificate> GenerateTrustedTestCertificateNotYetValid()
         {
             var actionGenerator = CertificateModificationGeneratorNotYetValidCert;
 
@@ -499,7 +504,7 @@ namespace Test.Utility.Signing
             return TestCertificate.Generate(actionGenerator).WithTrust(StoreName.Root, StoreLocation.LocalMachine);
         }
 
-        public static TrustedTestCert<TestCertificate> GenerateTrustedTestCertificateThatExpiresIn5Seconds()
+        public static StoreCertificate<TestCertificate> GenerateTrustedTestCertificateThatExpiresIn5Seconds()
         {
             var actionGenerator = CertificateModificationGeneratorExpireIn5Seconds;
 

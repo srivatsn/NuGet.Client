@@ -23,11 +23,11 @@ namespace NuGet.CommandLine.FuncTest.Commands
         private const int _validCertChainLength = 3;
         private const int _invalidCertChainLength = 2;
 
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
-        private TrustedTestCert<TestCertificate> _trustedTestCertWithInvalidEku;
-        private TrustedTestCert<TestCertificate> _trustedTestCertExpired;
-        private TrustedTestCert<TestCertificate> _trustedTestCertNotYetValid;
-        private TrustedTestCert<X509Certificate2> _trustedTimestampRoot;
+        private StoreCertificate<TestCertificate> _trustedTestCert;
+        private StoreCertificate<TestCertificate> _trustedTestCertWithInvalidEku;
+        private StoreCertificate<TestCertificate> _trustedTestCertExpired;
+        private StoreCertificate<TestCertificate> _trustedTestCertNotYetValid;
+        private StoreCertificate<X509Certificate2> _trustedTimestampRoot;
         private TrustedTestCertificateChain _trustedTestCertChain;
         private TrustedTestCertificateChain _revokedTestCertChain;
         private TrustedTestCertificateChain _revocationUnknownTestCertChain;
@@ -43,7 +43,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
         private Lazy<Task<TimestampService>> _defaultTrustedTimestampService;
         private readonly DisposableList<IDisposable> _responders;
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificate
+        public IStoreCertificate<TestCertificate> TrustedTestCertificate
         {
             get
             {
@@ -61,7 +61,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
             }
         }
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificateWithInvalidEku
+        public IStoreCertificate<TestCertificate> TrustedTestCertificateWithInvalidEku
         {
             get
             {
@@ -78,7 +78,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
             }
         }
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificateExpired
+        public IStoreCertificate<TestCertificate> TrustedTestCertificateExpired
         {
             get
             {
@@ -96,7 +96,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
             }
         }
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificateNotYetValid
+        public IStoreCertificate<TestCertificate> TrustedTestCertificateNotYetValid
         {
             get
             {
@@ -122,10 +122,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 {
                     var certChain = SigningTestUtility.GenerateCertificateChain(_validCertChainLength, CrlServer.Uri, TestDirectory.Path);
 
-                    _trustedTestCertChain = new TrustedTestCertificateChain()
-                    {
-                        Certificates = certChain
-                    };
+                    _trustedTestCertChain = new TrustedTestCertificateChain(certChain);
 
                     SetUpCrlDistributionPoint();
                 }
@@ -134,7 +131,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
             }
         }
 
-        public TrustedTestCert<TestCertificate> RevokedTestCertificateWithChain
+        public IStoreCertificate<TestCertificate> RevokedTestCertificateWithChain
         {
             get
             {
@@ -142,13 +139,12 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 {
                     var certChain = SigningTestUtility.GenerateCertificateChain(_invalidCertChainLength, CrlServer.Uri, TestDirectory.Path);
 
-                    _revokedTestCertChain = new TrustedTestCertificateChain()
-                    {
-                        Certificates = certChain
-                    };
+                    _revokedTestCertChain = new TrustedTestCertificateChain(certChain);
 
-                    // mark leaf certificate as revoked
-                    _revokedTestCertChain.Certificates[0].Source.Crl.RevokeCertificate(_revokedTestCertChain.Leaf.Source.Cert);
+                    using (var certificate = _revokedTestCertChain.Leaf.Source.GetCertificate())
+                    {
+                        _revokedTestCertChain.Root.Source.Crl.RevokeCertificate(certificate);
+                    }
 
                     SetUpCrlDistributionPoint();
                 }
@@ -157,7 +153,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
             }
         }
 
-        public TrustedTestCert<TestCertificate> RevocationUnknownTestCertificateWithChain
+        public IStoreCertificate<TestCertificate> RevocationUnknownTestCertificateWithChain
         {
             get
             {
@@ -165,10 +161,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 {
                     var certChain = SigningTestUtility.GenerateCertificateChain(_invalidCertChainLength, CrlServer.Uri, TestDirectory.Path, configureLeafCrl: false);
 
-                    _revocationUnknownTestCertChain = new TrustedTestCertificateChain()
-                    {
-                        Certificates = certChain
-                    };
+                    _revocationUnknownTestCertChain = new TrustedTestCertificateChain(certChain);
 
                     SetUpCrlDistributionPoint();
                 }
@@ -343,12 +336,14 @@ namespace NuGet.CommandLine.FuncTest.Commands
             var testServer = await _testServer.Value;
             var rootCa = CertificateAuthority.Create(testServer.Url);
             var intermediateCa = rootCa.CreateIntermediateCertificateAuthority();
-            var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded());
 
-            _trustedTimestampRoot = TrustedTestCert.Create(
-                rootCertificate,
-                StoreName.Root,
-                StoreLocation.LocalMachine);
+            using (var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded()))
+            {
+                _trustedTimestampRoot = StoreCertificate.Create(
+                    rootCertificate,
+                    StoreName.Root,
+                    StoreLocation.LocalMachine);
+            }
 
             var ca = intermediateCa;
 

@@ -6,8 +6,10 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Test.Utility.Signing
 {
-    public class ChainCertificateRequest
+    public class ChainCertificateRequest : IDisposable
     {
+        private bool _isDisposed;
+
         public string CrlServerBaseUri { get; set; }
 
         public string CrlLocalBaseUri { get; set; }
@@ -19,5 +21,17 @@ namespace Test.Utility.Signing
         public X509Certificate2 Issuer { get; set; }
 
         public string IssuerDN => Issuer?.Subject;
+
+        public void Dispose()
+        {
+            if (!_isDisposed)
+            {
+                Issuer?.Dispose();
+
+                GC.SuppressFinalize(this);
+
+                _isDisposed = true;
+            }
+        }
     }
 }

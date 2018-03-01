@@ -9,17 +9,21 @@ namespace Test.Utility.Signing
 {
     public class TrustedTestCertificateChain : IDisposable
     {
-        public IList<TrustedTestCert<TestCertificate>> Certificates { get; set; } = new List<TrustedTestCert<TestCertificate>>();
+        private readonly IList<StoreCertificate<TestCertificate>> _certificates;
 
-        public TrustedTestCert<TestCertificate> Root => Certificates?.First();
+        public IStoreCertificate<TestCertificate> Root => _certificates?.First();
+        public IStoreCertificate<TestCertificate> Leaf => _certificates?.Last();
 
-        public TrustedTestCert<TestCertificate> Leaf => Certificates?.Last();
+        public TrustedTestCertificateChain(IList<StoreCertificate<TestCertificate>> certificates)
+        {
+            _certificates = certificates;
+        }
 
         public void Dispose()
         {
-            if (Certificates != null)
+            if (_certificates != null)
             {
-                foreach (var certificate in Certificates)
+                foreach (var certificate in _certificates)
                 {
                     certificate.Dispose();
                 }

@@ -26,7 +26,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
         private readonly string _noMatchingCertErrorCode = NuGetLogCode.NU3003.ToString();
 
         private SignCommandTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
         private string _nugetExePath;
 
         public VerifyCommandTests(SignCommandTestFixture fixture)
@@ -55,7 +55,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var signResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 signResult.Success.Should().BeTrue();
@@ -94,7 +94,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var signResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -Timestamper {timestampService.Url.OriginalString} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -Timestamper {timestampService.Url.OriginalString} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 signResult.Success.Should().BeTrue();
@@ -131,13 +131,13 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var firstResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 var secondResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Overwrite",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Overwrite",
                     waitForExit: true);
 
                 firstResult.Success.Should().BeTrue();
@@ -177,7 +177,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var signResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 signResult.Success.Should().BeTrue();
@@ -216,24 +216,32 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var signResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 signResult.Success.Should().BeTrue();
-
-                var certificateFingerprint = CertificateUtility.GetHash(cert.Source.Cert, HashAlgorithmName.SHA256);
-                var certificateFingerprintString = BitConverter.ToString(certificateFingerprint).Replace("-", "");
+                var fingerprint = GetCertificateFingerprint(cert);
 
                 // Act
                 var verifyResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"verify {packagePath} -Signatures -CertificateFingerprint {certificateFingerprintString};abc;def",
+                    $"verify {packagePath} -Signatures -CertificateFingerprint {fingerprint};abc;def",
                     waitForExit: true);
 
                 // Assert
                 verifyResult.Success.Should().BeTrue();
                 verifyResult.AllOutput.Should().Contain(_noTimestamperWarningCode);
+            }
+        }
+
+        private static string GetCertificateFingerprint(IStoreCertificate<TestCertificate> cert)
+        {
+            using (var certificate = cert.Source.GetCertificate())
+            {
+                var certificateFingerprint = CertificateUtility.GetHash(certificate, HashAlgorithmName.SHA256);
+
+                return BitConverter.ToString(certificateFingerprint).Replace("-", "");
             }
         }
 
@@ -258,7 +266,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var signResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 signResult.Success.Should().BeTrue();

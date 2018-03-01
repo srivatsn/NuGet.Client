@@ -28,7 +28,7 @@ namespace NuGet.Packaging.FuncTest
         [CIOnlyFact]
         public void Verify_WithValidInput_DoesNotThrow()
         {
-            using (var certificate = new X509Certificate2(_testFixture.TrustedTestCertificate.Source.PublicCert.RawData))
+            using (var certificate = _testFixture.TrustedTestCertificate.Source.GetCertificate())
             using (var request = new AuthorSignPackageRequest(certificate, HashAlgorithmName.SHA256, HashAlgorithmName.SHA256))
             {
                 SigningUtility.Verify(request, NullLogger.Instance);
@@ -38,7 +38,7 @@ namespace NuGet.Packaging.FuncTest
         [CIOnlyFact]
         public async Task SignAsync_AddsPackageSignatureAsync()
         {
-            using (var test = new Test(_testFixture.TrustedTestCertificate.Source.Cert))
+            using (var test = new Test(_testFixture.TrustedTestCertificate.Source.GetCertificate()))
             {
                 await SigningUtility.SignAsync(test.Options, test.Request, CancellationToken.None);
 
@@ -51,7 +51,7 @@ namespace NuGet.Packaging.FuncTest
         [CIOnlyFact]
         public async Task RemoveSignaturesAsync_RemovesPackageSignatureAsync()
         {
-            using (var signTest = new Test(_testFixture.TrustedTestCertificate.Source.Cert))
+            using (var signTest = new Test(_testFixture.TrustedTestCertificate.Source.GetCertificate()))
             {
                 await SigningUtility.SignAsync(signTest.Options, signTest.Request, CancellationToken.None);
 
@@ -73,7 +73,7 @@ namespace NuGet.Packaging.FuncTest
         [CIOnlyFact]
         public async Task SignAsync_WithExpiredCertificate_ThrowsAsync()
         {
-            using (var test = new Test(_testFixture.TrustedTestCertificateExpired.Source.Cert))
+            using (var test = new Test(_testFixture.TrustedTestCertificateExpired.Source.GetCertificate()))
             {
                 var exception = await Assert.ThrowsAsync<SignatureException>(
                     () => SigningUtility.SignAsync(test.Options, test.Request, CancellationToken.None));
@@ -91,7 +91,7 @@ namespace NuGet.Packaging.FuncTest
         [CIOnlyFact]
         public async Task SignAsync_WithNotYetValidCertificate_ThrowsAsync()
         {
-            using (var test = new Test(_testFixture.TrustedTestCertificateNotYetValid.Source.Cert))
+            using (var test = new Test(_testFixture.TrustedTestCertificateNotYetValid.Source.GetCertificate()))
             {
                 var exception = await Assert.ThrowsAsync<SignatureException>(
                     () => SigningUtility.SignAsync(test.Options, test.Request, CancellationToken.None));
@@ -131,7 +131,7 @@ namespace NuGet.Packaging.FuncTest
             internal Test(X509Certificate2 certificate)
             {
                 _directory = TestDirectory.Create();
-                _certificate = new X509Certificate2(certificate);
+                _certificate = certificate;
 
                 var packageContext = new SimpleTestPackageContext();
                 var packageFileName = Guid.NewGuid().ToString();

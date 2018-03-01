@@ -9,8 +9,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Cryptography.Pkcs;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,7 +29,7 @@ namespace NuGet.Packaging.FuncTest
         private const string _packageInvalidSignatureError = "The package signature is invalid.";
 
         private SigningTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
         private IList<ISignatureVerificationProvider> _trustProviders;
 
         public IntegrityVerificationProviderTests(SigningTestFixture fixture)
@@ -69,9 +67,9 @@ namespace NuGet.Packaging.FuncTest
             var policy = GetSettingsPolicy(policyString);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
                 var verifier = new PackageSignatureVerifier(_trustProviders, policy);
 
                 using (var packageReader = new PackageArchiveReader(signedPackagePath))
@@ -95,9 +93,9 @@ namespace NuGet.Packaging.FuncTest
             var policy = GetSettingsPolicy(policyString);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
                 SignedArchiveTestUtility.TamperWithPackage(signedPackagePath);
 
                 var verifier = new PackageSignatureVerifier(_trustProviders, policy);
@@ -131,9 +129,9 @@ namespace NuGet.Packaging.FuncTest
             var newEntryName = "malicious file";
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 // tamper with the package
                 using (var stream = File.Open(signedPackagePath, FileMode.Open))
@@ -175,9 +173,9 @@ namespace NuGet.Packaging.FuncTest
             var extraData = "tampering data";
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 // tamper with the package
                 using (var stream = File.Open(signedPackagePath, FileMode.Open))
@@ -218,9 +216,9 @@ namespace NuGet.Packaging.FuncTest
             var policy = GetSettingsPolicy(policyString);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 // tamper with the package
                 using (var stream = File.Open(signedPackagePath, FileMode.Open))
@@ -259,9 +257,9 @@ namespace NuGet.Packaging.FuncTest
             var policy = GetSettingsPolicy(policyString);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 // tamper with the package
                 using (var stream = File.Open(signedPackagePath, FileMode.Open))
@@ -303,9 +301,9 @@ namespace NuGet.Packaging.FuncTest
             var policy = GetSettingsPolicy(policyString);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 // unsign the package
                 using (var stream = File.Open(signedPackagePath, FileMode.Open))
@@ -347,9 +345,9 @@ namespace NuGet.Packaging.FuncTest
             var policy = GetSettingsPolicy(policyString);
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 TamperSignature(signedPackagePath);
 

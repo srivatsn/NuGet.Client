@@ -5,7 +5,6 @@
 
 using System;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -23,7 +22,7 @@ namespace NuGet.Packaging.FuncTest
         private const string _noCertInAllowList = "No certificate matching";
 
         private SigningTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
 
         public AllowListVerificationProviderTests(SigningTestFixture fixture)
         {
@@ -38,10 +37,10 @@ namespace NuGet.Packaging.FuncTest
             var nupkg = new SimpleTestPackageContext();
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
-                var certificateFingerprint = CertificateUtility.GetHash(testCertificate, HashAlgorithmName.SHA256);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
+                var certificateFingerprint = CertificateUtility.GetHash(certificate, HashAlgorithmName.SHA256);
                 var certificateFingerprintString = BitConverter.ToString(certificateFingerprint).Replace("-", "");
 
                 var allowListHashes = new[] { certificateFingerprintString, "abc" };
@@ -72,9 +71,9 @@ namespace NuGet.Packaging.FuncTest
             var nupkg = new SimpleTestPackageContext();
 
             using (var dir = TestDirectory.Create())
-            using (var testCertificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var certificate = _trustedTestCert.Source.GetCertificate())
             {
-                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(testCertificate, nupkg, dir);
+                var signedPackagePath = await SignedArchiveTestUtility.CreateSignedPackageAsync(certificate, nupkg, dir);
 
                 var allowListHashes = new[] { "abc" };
                 var allowList = allowListHashes.Select(hash => new CertificateHashAllowListEntry(VerificationTarget.Primary, hash)).ToList();

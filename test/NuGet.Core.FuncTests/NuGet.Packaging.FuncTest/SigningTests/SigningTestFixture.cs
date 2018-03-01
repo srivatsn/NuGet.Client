@@ -15,12 +15,12 @@ namespace NuGet.Packaging.FuncTest
     /// </summary>
     public class SigningTestFixture : IDisposable
     {
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
-        private TrustedTestCert<TestCertificate> _trustedTestCertExpired;
-        private TrustedTestCert<TestCertificate> _trustedTestCertNotYetValid;
-        private TrustedTestCert<X509Certificate2> _trustedServerRoot;
+        private StoreCertificate<TestCertificate> _trustedTestCert;
+        private StoreCertificate<TestCertificate> _trustedTestCertExpired;
+        private StoreCertificate<TestCertificate> _trustedTestCertNotYetValid;
+        private StoreCertificate<X509Certificate2> _trustedServerRoot;
         private TestCertificate _untrustedTestCert;
-        private IReadOnlyList<TrustedTestCert<TestCertificate>> _trustedTestCertificateWithReissuedCertificate;
+        private IReadOnlyList<StoreCertificate<TestCertificate>> _trustedTestCertificateWithReissuedCertificate;
         private IList<ISignatureVerificationProvider> _trustProviders;
         private SigningSpecifications _signingSpecifications;
         private Lazy<Task<SigningTestServer>> _testServer;
@@ -36,7 +36,7 @@ namespace NuGet.Packaging.FuncTest
             _responders = new DisposableList<IDisposable>();
         }
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificate
+        public IStoreCertificate<TestCertificate> TrustedTestCertificate
         {
             get
             {
@@ -49,7 +49,7 @@ namespace NuGet.Packaging.FuncTest
             }
         }
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificateExpired
+        public IStoreCertificate<TestCertificate> TrustedTestCertificateExpired
         {
             get
             {
@@ -62,7 +62,7 @@ namespace NuGet.Packaging.FuncTest
             }
         }
 
-        public TrustedTestCert<TestCertificate> TrustedTestCertificateNotYetValid
+        public IStoreCertificate<TestCertificate> TrustedTestCertificateNotYetValid
         {
             get
             {
@@ -75,7 +75,7 @@ namespace NuGet.Packaging.FuncTest
             }
         }
 
-        public IReadOnlyList<TrustedTestCert<TestCertificate>> TrustedTestCertificateWithReissuedCertificate
+        public IReadOnlyList<IStoreCertificate<TestCertificate>> TrustedTestCertificateWithReissuedCertificate
         {
             get
             {
@@ -86,8 +86,8 @@ namespace NuGet.Packaging.FuncTest
                     var certificate1 = SigningTestUtility.GenerateCertificate(certificateName, keyPair);
                     var certificate2 = SigningTestUtility.GenerateCertificate(certificateName, keyPair);
 
-                    var testCertificate1 = new TestCertificate() { Cert = certificate1 }.WithTrust(StoreName.Root, StoreLocation.LocalMachine);
-                    var testCertificate2 = new TestCertificate() { Cert = certificate2 }.WithTrust(StoreName.Root, StoreLocation.LocalMachine);
+                    var testCertificate1 = new TestCertificate(certificate1).WithTrust(StoreName.Root, StoreLocation.LocalMachine);
+                    var testCertificate2 = new TestCertificate(certificate2).WithTrust(StoreName.Root, StoreLocation.LocalMachine);
 
                     _trustedTestCertificateWithReissuedCertificate = new[]
                     {
@@ -163,12 +163,15 @@ namespace NuGet.Packaging.FuncTest
             var testServer = await _testServer.Value;
             var rootCa = CertificateAuthority.Create(testServer.Url);
             var intermediateCa = rootCa.CreateIntermediateCertificateAuthority();
-            var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded());
 
-            _trustedServerRoot = TrustedTestCert.Create(
-                rootCertificate,
-                StoreName.Root,
-                StoreLocation.LocalMachine);
+            using (var rootCertificate = new X509Certificate2(rootCa.Certificate.GetEncoded()))
+            {
+
+                _trustedServerRoot = StoreCertificate.Create(
+                    rootCertificate,
+                    StoreName.Root,
+                    StoreLocation.LocalMachine);
+            }
 
             var ca = intermediateCa;
 

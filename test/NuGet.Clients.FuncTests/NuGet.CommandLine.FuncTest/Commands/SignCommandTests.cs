@@ -27,7 +27,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
         private readonly string _noTimestamperWarningCode = NuGetLogCode.NU3002.ToString();
 
         private SignCommandTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
         private string _nugetExePath;
 
         public SignCommandTests(SignCommandTestFixture fixture)
@@ -57,7 +57,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -88,7 +88,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {invalidEkuCert.Source.Cert.Thumbprint} -CertificateStoreName {invalidEkuCert.StoreName} -CertificateStoreLocation {invalidEkuCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {invalidEkuCert.Source.Fingerprint} -CertificateStoreName {invalidEkuCert.StoreName} -CertificateStoreLocation {invalidEkuCert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -121,7 +121,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {expiredCert.Source.Cert.Thumbprint} -CertificateStoreName {expiredCert.StoreName} -CertificateStoreLocation {expiredCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {expiredCert.Source.Fingerprint} -CertificateStoreName {expiredCert.StoreName} -CertificateStoreLocation {expiredCert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -153,7 +153,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -185,7 +185,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Timestamper {timestampService.Url.OriginalString}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Timestamper {timestampService.Url.OriginalString}",
                     waitForExit: true);
 
                 // Assert
@@ -216,7 +216,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint}  -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint}  -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -247,7 +247,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint}  -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint}  -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -280,7 +280,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Cert.Thumbprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {cert.Source.Fingerprint} -CertificateStoreName {cert.StoreName} -CertificateStoreLocation {cert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -314,7 +314,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var result = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -OutputDirectory {outputDir}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -OutputDirectory {outputDir}",
                     waitForExit: true);
 
                 // Assert
@@ -343,14 +343,14 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var firstResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 // Act
                 var secondResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint}  -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 // Assert
@@ -381,13 +381,13 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var firstResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation}",
                     waitForExit: true);
 
                 var secondResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Overwrite",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Overwrite",
                     waitForExit: true);
 
                 // Assert
@@ -418,7 +418,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var firstResult = CommandRunner.Run(
                     _nugetExePath,
                     dir,
-                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Cert.Thumbprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Overwrite",
+                    $"sign {packagePath} -CertificateFingerprint {_trustedTestCert.Source.Fingerprint} -CertificateStoreName {_trustedTestCert.StoreName} -CertificateStoreLocation {_trustedTestCert.StoreLocation} -Overwrite",
                     waitForExit: true);
 
                 // Assert
@@ -438,7 +438,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var pfxPath = Path.Combine(dir, Guid.NewGuid().ToString());
 
                 var password = Guid.NewGuid().ToString();
-                var pfxBytes = _trustedTestCert.Source.Cert.Export(X509ContentType.Pfx, password);
+                var pfxBytes = _trustedTestCert.Source.ExportCertificate(X509ContentType.Pfx, password);
 
                 using (var fileStream = File.OpenWrite(pfxPath))
                 using (var pfxStream = new MemoryStream(pfxBytes))
@@ -477,7 +477,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var pfxPath = Path.Combine(dir, Guid.NewGuid().ToString());
 
                 var password = Guid.NewGuid().ToString();
-                var pfxBytes = _trustedTestCert.Source.Cert.Export(X509ContentType.Pfx, password);
+                var pfxBytes = _trustedTestCert.Source.ExportCertificate(X509ContentType.Pfx, password);
 
                 using (var fileStream = File.OpenWrite(pfxPath))
                 using (var pfxStream = new MemoryStream(pfxBytes))
@@ -520,7 +520,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var pfxPath = Path.Combine(dir, Guid.NewGuid().ToString());
 
                 var password = Guid.NewGuid().ToString();
-                var pfxBytes = _trustedTestCert.Source.Cert.Export(X509ContentType.Pfx, password);
+                var pfxBytes = _trustedTestCert.Source.ExportCertificate(X509ContentType.Pfx, password);
 
                 using (var fileStream = File.OpenWrite(pfxPath))
                 using (var pfxStream = new MemoryStream(pfxBytes))
@@ -563,7 +563,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var pfxPath = Path.Combine(dir, Guid.NewGuid().ToString());
 
                 var password = Guid.NewGuid().ToString();
-                var pfxBytes = _trustedTestCert.Source.Cert.Export(X509ContentType.Pfx, password);
+                var pfxBytes = _trustedTestCert.Source.ExportCertificate(X509ContentType.Pfx, password);
 
                 using (var fileStream = File.OpenWrite(pfxPath))
                 using (var pfxStream = new MemoryStream(pfxBytes))
@@ -602,7 +602,7 @@ namespace NuGet.CommandLine.FuncTest.Commands
                 var pfxPath = Path.Combine(dir, Guid.NewGuid().ToString());
 
                 var password = Guid.NewGuid().ToString();
-                var pfxBytes = _trustedTestCert.Source.Cert.Export(X509ContentType.Pfx, password);
+                var pfxBytes = _trustedTestCert.Source.ExportCertificate(X509ContentType.Pfx, password);
 
                 using (var fileStream = File.OpenWrite(pfxPath))
                 using (var pfxStream = new MemoryStream(pfxBytes))

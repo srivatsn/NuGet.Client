@@ -29,7 +29,7 @@ namespace NuGet.Packaging.FuncTest
         private const string _operationCancelledExceptionMessage = "The operation was canceled.";
 
         private SigningTestFixture _testFixture;
-        private TrustedTestCert<TestCertificate> _trustedTestCert;
+        private IStoreCertificate<TestCertificate> _trustedTestCert;
 
         public TimestampProviderTests(SigningTestFixture fixture)
         {
@@ -45,7 +45,7 @@ namespace NuGet.Packaging.FuncTest
             var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
             var data = "Test data to be signed and timestamped";
 
-            using (var authorCert = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var authorCert = _trustedTestCert.Source.GetCertificate())
             {
                 var signedCms = SigningTestUtility.GenerateSignedCms(authorCert, Encoding.ASCII.GetBytes(data));
                 var signatureValue = signedCms.Encode();
@@ -80,7 +80,7 @@ namespace NuGet.Packaging.FuncTest
             var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
             var nupkg = new SimpleTestPackageContext();
 
-            using (var authorCert = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var authorCert = _trustedTestCert.Source.GetCertificate())
             using (var packageStream = nupkg.CreateAsStream())
             {
                 // Act
@@ -171,7 +171,7 @@ namespace NuGet.Packaging.FuncTest
             var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
             var data = "Test data to be signed and timestamped";
 
-            using (var authorCert = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var authorCert = _trustedTestCert.Source.GetCertificate())
             {
                 var signedCms = SigningTestUtility.GenerateSignedCms(authorCert, Encoding.ASCII.GetBytes(data));
                 var signatureValue = signedCms.Encode();
@@ -200,7 +200,7 @@ namespace NuGet.Packaging.FuncTest
             var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
             var data = "Test data to be signed and timestamped";
 
-            using (var authorCert = new X509Certificate2(_trustedTestCert.Source.Cert))
+            using (var authorCert = _trustedTestCert.Source.GetCertificate())
             {
                 var signedCms = SigningTestUtility.GenerateSignedCms(authorCert, Encoding.ASCII.GetBytes(data));
                 var signatureValue = signedCms.Encode();
@@ -348,7 +348,7 @@ namespace NuGet.Packaging.FuncTest
             {
                 var timestampProvider = new Rfc3161TimestampProvider(timestampService.Url);
 
-                using (var certificate = new X509Certificate2(_trustedTestCert.Source.Cert))
+                using (var certificate = _trustedTestCert.Source.GetCertificate())
                 {
                     var content = Encoding.UTF8.GetBytes("peach");
                     var signedCms = SigningTestUtility.GenerateSignedCms(certificate, content);

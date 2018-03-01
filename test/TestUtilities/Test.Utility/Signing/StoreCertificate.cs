@@ -6,15 +6,15 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Test.Utility.Signing
 {
-    public static class TrustedTestCert
+    public static class StoreCertificate
     {
-        public static TrustedTestCert<X509Certificate2> Create(
+        public static StoreCertificate<X509Certificate2> Create(
             X509Certificate2 cert,
             StoreName storeName = StoreName.TrustedPeople,
             StoreLocation storeLocation = StoreLocation.CurrentUser,
             TimeSpan? maximumValidityPeriod = null)
         {
-            return new TrustedTestCert<X509Certificate2>(
+            return new StoreCertificate<X509Certificate2>(
                 cert,
                 x => x,
                 storeName,
@@ -26,11 +26,11 @@ namespace Test.Utility.Signing
     /// <summary>
     /// Give a certificate full trust for the life of the object.
     /// </summary>
-    public class TrustedTestCert<T> : IDisposable
+    public class StoreCertificate<T> : IStoreCertificate<T>, IDisposable
     {
         private X509Store _store;
 
-        public X509Certificate2 TrustedCert { get; }
+        public X509Certificate2 Certificate { get; }
 
         public T Source { get; }
 
@@ -38,14 +38,14 @@ namespace Test.Utility.Signing
 
         public StoreLocation StoreLocation { get; }
 
-        public TrustedTestCert(T source,
+        public StoreCertificate(T source,
             Func<T, X509Certificate2> getCert,
             StoreName storeName = StoreName.TrustedPeople,
             StoreLocation storeLocation = StoreLocation.CurrentUser,
             TimeSpan? maximumValidityPeriod = null)
         {
             Source = source;
-            TrustedCert = getCert(source);
+            Certificate = getCert(source);
 
             if (!maximumValidityPeriod.HasValue)
             {
@@ -53,7 +53,7 @@ namespace Test.Utility.Signing
             }
 
 #if IS_DESKTOP
-            if (TrustedCert.NotAfter - TrustedCert.NotBefore > maximumValidityPeriod.Value)
+            if (Certificate.NotAfter - Certificate.NotBefore > maximumValidityPeriod.Value)
             {
                 throw new InvalidOperationException($"The certificate used is valid for more than {maximumValidityPeriod}.");
             }
@@ -68,7 +68,7 @@ namespace Test.Utility.Signing
         {
             _store = new X509Store(StoreName, StoreLocation);
             _store.Open(OpenFlags.ReadWrite);
-            _store.Add(TrustedCert);
+            _store.Add(Certificate);
         }
 
         private void ExportCrl()
@@ -95,7 +95,7 @@ namespace Test.Utility.Signing
         {
             using (_store)
             {
-                _store.Remove(TrustedCert);
+                _store.Remove(Certificate);
 #if IS_DESKTOP
                 _store.Close();
 #endif

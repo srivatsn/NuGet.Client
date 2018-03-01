@@ -12,20 +12,17 @@ namespace Test.Utility.Signing
     /// </summary>
     public class TestCertificate
     {
-        /// <summary>
-        /// Cert
-        /// </summary>
-        public X509Certificate2 Cert { get; set; }
+        private readonly X509Certificate2 _certificate;
 
         /// <summary>
         /// Public cert.
         /// </summary>
-        public X509Certificate2 PublicCert => SigningTestUtility.GetPublicCert(Cert);
+        public X509Certificate2 PublicCert => SigningTestUtility.GetPublicCert(_certificate);
 
         /// <summary>
         /// Public cert.
         /// </summary>
-        public X509Certificate2 PublicCertWithPrivateKey => SigningTestUtility.GetPublicCertWithPrivateKey(Cert);
+        public X509Certificate2 PublicCertWithPrivateKey => SigningTestUtility.GetPublicCertWithPrivateKey(_certificate);
 
         /// <summary>
         /// Certificate Revocation List associated with a certificate.
@@ -33,22 +30,44 @@ namespace Test.Utility.Signing
         /// </summary>
         public CertificateRevocationList Crl { get; set; }
 
-        /// <summary>
-        /// Trust the PublicCert cert for the life of the object.
-        /// </summary>
-        /// <remarks>Dispose of the object returned!</remarks>
-        public TrustedTestCert<TestCertificate> WithTrust(StoreName storeName = StoreName.TrustedPeople, StoreLocation storeLocation = StoreLocation.CurrentUser)
+        public string Fingerprint => _certificate.Thumbprint;
+
+        public TestCertificate(X509Certificate2 certificate)
         {
-            return new TrustedTestCert<TestCertificate>(this, e => PublicCert, storeName, storeLocation);
+            if (certificate == null)
+            {
+                throw new ArgumentNullException(nameof(certificate));
+            }
+
+            _certificate = certificate;
+        }
+
+        public X509Certificate2 GetCertificate()
+        {
+            return new X509Certificate2(_certificate.RawData);
+        }
+
+        public byte[] ExportCertificate(X509ContentType contentType, string password)
+        {
+            return _certificate.Export(contentType, password);
         }
 
         /// <summary>
         /// Trust the PublicCert cert for the life of the object.
         /// </summary>
         /// <remarks>Dispose of the object returned!</remarks>
-        public TrustedTestCert<TestCertificate> WithPrivateKeyAndTrust(StoreName storeName = StoreName.TrustedPeople, StoreLocation storeLocation = StoreLocation.CurrentUser)
+        public StoreCertificate<TestCertificate> WithTrust(StoreName storeName = StoreName.TrustedPeople, StoreLocation storeLocation = StoreLocation.CurrentUser)
         {
-            return new TrustedTestCert<TestCertificate>(this, e => PublicCertWithPrivateKey, storeName, storeLocation);
+            return new StoreCertificate<TestCertificate>(this, e => PublicCert, storeName, storeLocation);
+        }
+
+        /// <summary>
+        /// Trust the PublicCert cert for the life of the object.
+        /// </summary>
+        /// <remarks>Dispose of the object returned!</remarks>
+        public StoreCertificate<TestCertificate> WithPrivateKeyAndTrust(StoreName storeName = StoreName.TrustedPeople, StoreLocation storeLocation = StoreLocation.CurrentUser)
+        {
+            return new StoreCertificate<TestCertificate>(this, e => PublicCertWithPrivateKey, storeName, storeLocation);
         }
 
         public static string GenerateCertificateName()
@@ -68,9 +87,8 @@ namespace Test.Utility.Signing
                 crl = CertificateRevocationList.CreateCrl(cert, chainCertificateRequest.CrlLocalBaseUri);
             }
 
-            var testCertificate = new TestCertificate
+            var testCertificate = new TestCertificate(cert)
             {
-                Cert = cert,
                 Crl = crl
             };
 
