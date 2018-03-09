@@ -56,7 +56,6 @@ namespace NuGet.PackageManagement.UI
 
         // Initial to true so change detection logic is simple (since UI defaults to shown).
         private bool _shouldShowUpgradeProject = true;
-        private bool _nuGetProjectUpgradeCollapseDependencies;
 
         private readonly INuGetUILogger _uiLogger;
 
@@ -378,8 +377,6 @@ namespace NuGet.PackageManagement.UI
                 return;
             }
 
-            _nuGetProjectUpgradeCollapseDependencies = settings.NuGetProjectUpgradeCollapseDependencies;
-
             _detailModel.Options.ShowPreviewWindow = settings.ShowPreviewWindow;
             _detailModel.Options.ShowDeprecatedFrameworkWindow = settings.ShowDeprecatedFrameworkWindow;
             _detailModel.Options.RemoveDependencies = settings.RemoveDependencies;
@@ -450,7 +447,6 @@ namespace NuGet.PackageManagement.UI
         {
             var settings = new UserSettings
             {
-                NuGetProjectUpgradeCollapseDependencies = _nuGetProjectUpgradeCollapseDependencies,
                 SourceRepository = SelectedSource?.SourceName,
                 ShowPreviewWindow = _detailModel.Options.ShowPreviewWindow,
                 ShowDeprecatedFrameworkWindow = _detailModel.Options.ShowDeprecatedFrameworkWindow,
@@ -1205,9 +1201,7 @@ namespace NuGet.PackageManagement.UI
             var project = Model.Context.Projects.FirstOrDefault();
             Debug.Assert(project != null);
 
-            _nuGetProjectUpgradeCollapseDependencies = await
-                     Model.Context.UIActionEngine.UpgradeNuGetProjectAsync(Model.UIController, project,
-                    _nuGetProjectUpgradeCollapseDependencies);
+            await Model.Context.UIActionEngine.UpgradeNuGetProjectAsync(Model.UIController, project);
         }
     }
 }

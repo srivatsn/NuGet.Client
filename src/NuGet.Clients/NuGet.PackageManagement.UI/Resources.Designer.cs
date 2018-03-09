@@ -934,6 +934,33 @@ namespace NuGet.PackageManagement.UI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Package Id.
+        /// </summary>
+        public static string Migrator_PackageIdColumnHeader {
+            get {
+                return ResourceManager.GetString("Migrator_PackageIdColumnHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Top-Level.
+        /// </summary>
+        public static string Migrator_TopLevelColumnHeader {
+            get {
+                return ResourceManager.GetString("Migrator_TopLevelColumnHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Version.
+        /// </summary>
+        public static string Migrator_VersionColumnHeader {
+            get {
+                return ResourceManager.GetString("Migrator_VersionColumnHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to (dependency of {0}).
         /// </summary>
         public static string NuGetUpgrade_PackageDependencyOf {

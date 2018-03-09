@@ -116,7 +116,7 @@ namespace NuGet.PackageManagement.UI
                 token);
         }
 
-        public async Task<bool> UpgradeNuGetProjectAsync(INuGetUI uiService, NuGetProject nuGetProject, bool collapseDependencies)
+        public async Task UpgradeNuGetProjectAsync(INuGetUI uiService, NuGetProject nuGetProject)
         {
             var context = uiService.UIContext;
             // Restore the project before proceeding
@@ -125,15 +125,13 @@ namespace NuGet.PackageManagement.UI
             await context.PackageRestoreManager.RestoreMissingPackagesInSolutionAsync(solutionDirectory, uiService.ProjectContext, CancellationToken.None);
 
             var packagesDependencyInfo = await context.PackageManager.GetInstalledPackagesDependencyInfo(nuGetProject, CancellationToken.None, includeUnresolved: true);
-            var upgradeInformationWindowModel = new NuGetProjectUpgradeWindowModel(nuGetProject, packagesDependencyInfo.ToList(), collapseDependencies);
+            var upgradeInformationWindowModel = new NuGetProjectUpgradeWindowModel(nuGetProject, packagesDependencyInfo.ToList());
 
             var result = uiService.ShowNuGetUpgradeWindow(upgradeInformationWindowModel);
             if (!result)
             {
-                return collapseDependencies;
+                return;
             }
-
-            collapseDependencies = true;
 
             var progressDialogData = new ProgressDialogData(Resources.NuGetUpgrade_WaitMessage);
             string backupPath;
@@ -146,7 +144,6 @@ namespace NuGet.PackageManagement.UI
                     nuGetProject,
                     upgradeInformationWindowModel.UpgradeDependencyItems,
                     upgradeInformationWindowModel.NotFoundPackages,
-                    collapseDependencies,
                     progressDialogSession.Progress,
                     progressDialogSession.UserCancellationToken);
             }
@@ -157,8 +154,6 @@ namespace NuGet.PackageManagement.UI
 
                 OpenUrlInInternalWebBrowser(htmlLogFile);
             }
-
-            return collapseDependencies;
         }
 
         private static void OpenUrlInInternalWebBrowser(string url)

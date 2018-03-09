@@ -21,14 +21,11 @@ namespace NuGet.PackageManagement.UI
 {
     public class NuGetProjectUpgradeWindowModel : INotifyPropertyChanged
     {
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> _dependencyPackages;
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> _includedCollapsedPackages;
         private ObservableCollection<NuGetProjectUpgradeDependencyItem> _upgradeDependencyItems;
         private HashSet<PackageIdentity> _notFoundPackages;
         private string _projectName;
 
-        public NuGetProjectUpgradeWindowModel(NuGetProject project, IList<PackageDependencyInfo> packageDependencyInfos,
-            bool collapseDependencies)
+        public NuGetProjectUpgradeWindowModel(NuGetProject project, IList<PackageDependencyInfo> packageDependencyInfos)
         {
             PackageDependencyInfos = packageDependencyInfos;
             Project = project;
@@ -37,6 +34,12 @@ namespace NuGet.PackageManagement.UI
         public event PropertyChangedEventHandler PropertyChanged;
 
         public NuGetProject Project { get; }
+
+        public bool HasIssues
+        {
+            get;
+            private set;
+        }
 
         public string Title => string.Format(CultureInfo.CurrentCulture, Resources.WindowTitle_NuGetMigrator, ProjectName);
 
@@ -74,29 +77,17 @@ namespace NuGet.PackageManagement.UI
             }
         }
 
-        internal ObservableCollection<NuGetProjectUpgradeDependencyItem> UpgradeDependencyItems
+        public ObservableCollection<NuGetProjectUpgradeDependencyItem> UpgradeDependencyItems
             => _upgradeDependencyItems ?? (_upgradeDependencyItems = GetUpgradeDependencyItems());
 
-        public IEnumerable<NuGetProjectUpgradeDependencyItem> DirectDependencies => IncludedCollapsedPackages;
+        public IEnumerable<NuGetProjectUpgradeDependencyItem> DirectDependencies => UpgradeDependencyItems
+                .Where(upgradeDependencyItem => !upgradeDependencyItem.DependingPackages.Any());
 
-        public IEnumerable<NuGetProjectUpgradeDependencyItem> TransitiveDependencies => DependencyPackages;
-
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> DependencyPackages => _dependencyPackages ?? (_dependencyPackages = GetDependencyPackages());
+        public IEnumerable<NuGetProjectUpgradeDependencyItem> TransitiveDependencies => UpgradeDependencyItems.Where(d => d.DependingPackages.Any());
 
         public IEnumerable<NuGetProjectUpgradeDependencyItem> AllPackages => UpgradeDependencyItems;
 
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> IncludedCollapsedPackages => _includedCollapsedPackages ?? (_includedCollapsedPackages = GetIncludedCollapsedPackages());
-
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> GetDependencyPackages()
-        {
-            return UpgradeDependencyItems.Where(d => d.DependingPackages.Any());
-        }
-
-        private IEnumerable<NuGetProjectUpgradeDependencyItem> GetIncludedCollapsedPackages()
-        {
-            return UpgradeDependencyItems
-                .Where(upgradeDependencyItem => !upgradeDependencyItem.DependingPackages.Any());
-        }
+        private IEnumerable<NuGetProjectUpgradeDependencyItem> PackagesToInstall => UpgradeDependencyItems.Where(t => t.PromoteToTopLevel);
 
         private void InitPackageUpgradeIssues(FolderNuGetProject folderNuGetProject, NuGetProjectUpgradeDependencyItem package, NuGetFramework framework)
         {
@@ -106,6 +97,7 @@ namespace NuGet.PackageManagement.UI
             var packagePath = folderNuGetProject.GetInstalledPackageFilePath(packageIdentity);
             if (string.IsNullOrEmpty(packagePath))
             {
+                HasIssues = true;
                 _notFoundPackages.Add(packageIdentity);
                 package.Issues.Add(PackLogMessage.CreateWarning(
                     string.Format(CultureInfo.CurrentCulture, Resources.Upgrader_PackageNotFound, packageIdentity.Id),
@@ -113,23 +105,29 @@ namespace NuGet.PackageManagement.UI
             }
             else
             {
-                var reader = new PackageArchiveReader(packagePath);
-
-                // TODO: Create the right set of rules here.
-                var packageRules = PackageCreationRuleSet.Rules;
-                var issues = package.Issues;
-
-                foreach (var rule in packageRules)
+                using (var reader = new PackageArchiveReader(packagePath))
                 {
-                    issues.AddRange(rule.Validate(reader).OrderBy(p => p.Code.ToString(), StringComparer.CurrentCulture));
+                    // TODO: Create the right set of rules here.
+                    var packageRules = PackageCreationRuleSet.Rules;
+                    var issues = package.Issues;
+
+                    foreach (var rule in packageRules)
+                    {
+                        var foundIssues = rule.Validate(reader).OrderBy(p => p.Code.ToString(), StringComparer.CurrentCulture);
+                        if (foundIssues != null && foundIssues.Any())
+                        {
+                            HasIssues = true;
+                        }
+                        issues.AddRange(foundIssues);
+                    }
                 }
             }
         }
 
         private ObservableCollection<NuGetProjectUpgradeDependencyItem> GetUpgradeDependencyItems()
         {
-            var upgradeDependencyItems = new ObservableCollection<NuGetProjectUpgradeDependencyItem>(PackageDependencyInfos
-                .Select(p => new NuGetProjectUpgradeDependencyItem(new PackageIdentity(p.Id, p.Version))).ToList());
+            var upgradeDependencyItems = PackageDependencyInfos
+                .Select(p => new NuGetProjectUpgradeDependencyItem(new PackageIdentity(p.Id, p.Version))).ToList();
 
             foreach (var packageDependencyInfo in PackageDependencyInfos)
             {
@@ -137,7 +135,11 @@ namespace NuGet.PackageManagement.UI
                 {
                     var matchingDependencyItem = upgradeDependencyItems
                         .FirstOrDefault(d => (d.Package.Id == dependency.Id) && (d.Package.Version == dependency.VersionRange.MinVersion));
-                    matchingDependencyItem?.DependingPackages.Add(new PackageIdentity(packageDependencyInfo.Id, packageDependencyInfo.Version));
+                    if(matchingDependencyItem != null)
+                    {
+                        matchingDependencyItem.DependingPackages.Add(new PackageIdentity(packageDependencyInfo.Id, packageDependencyInfo.Version));
+                        matchingDependencyItem.PromoteToTopLevel = false;
+                    }
                 }
             }
 
@@ -150,7 +152,7 @@ namespace NuGet.PackageManagement.UI
                 InitPackageUpgradeIssues(folderNuGetProject, package, framework);
             }
 
-            return upgradeDependencyItems;
+            return new ObservableCollection<NuGetProjectUpgradeDependencyItem>(upgradeDependencyItems);
         }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -169,7 +171,7 @@ namespace NuGet.PackageManagement.UI
         private static readonly PackageIdentity PackageTwo = new PackageIdentity("Test.Package.Two", new NuGetVersion("4.5.6"));
         private static readonly PackageIdentity PackageThree = new PackageIdentity("Test.Package.Three", new NuGetVersion("7.8.9"));
 
-        private static readonly ObservableCollection<NuGetProjectUpgradeDependencyItem> DesignTimeUpgradeDependencyItems = new ObservableCollection<NuGetProjectUpgradeDependencyItem>(new List<NuGetProjectUpgradeDependencyItem>
+        public static readonly ObservableCollection<NuGetProjectUpgradeDependencyItem> DesignTimeUpgradeDependencyItems = new ObservableCollection<NuGetProjectUpgradeDependencyItem>( new List<NuGetProjectUpgradeDependencyItem>
         {
             new NuGetProjectUpgradeDependencyItem(PackageOne),
             new NuGetProjectUpgradeDependencyItem(PackageTwo, new List<PackageIdentity> {PackageOne}),

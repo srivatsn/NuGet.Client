@@ -24,12 +24,6 @@
         <nuget:SharedResources />
       </ResourceDictionary.MergedDictionaries>
       <BitmapImage
-        x:Key="BitmapImageError"
-        UriSource="/NuGet.PackageManagement.UI;component/Resources/statuserror.16.16.png" />
-      <BitmapImage
-        x:Key="BitmapImageWarning"
-        UriSource="/NuGet.PackageManagement.UI;component/Resources/statuswarning.16.16.png" />
-      <BitmapImage
         x:Key="BitmapImageInformation"
         UriSource="/NuGet.PackageManagement.UI;component/Resources/statusinformation.16.16.png" />
       <ControlTemplate
@@ -124,11 +118,19 @@
         </Style.Triggers>
       </Style>
       <Style x:Key="Migrator_DataGridColumnHeaderStyle" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="DataGridColumnHeader">
-        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Background" Value="{DynamicResource {x:Static nuget:Brushes.ContentBrushKey}}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource {x:Static nuget:Brushes.BorderBrush}}"/>
         <Setter Property="Foreground" Value="{DynamicResource {x:Static nuget:Brushes.UIText}}" />
         <Setter Property="BorderThickness" Value="1,0,0,1"/>
         <Setter Property="Padding" Value="3,2,2,4"/>
+        <Style.Triggers>
+          <Trigger Property="IsMouseOver" Value="True">
+            <Setter Property="Background" Value="{DynamicResource {x:Static nuget:Brushes.ButtonHoverStyleBrushKey}}" />
+          </Trigger>
+          <Trigger Property="IsPressed" Value="True">
+            <Setter Property="Background" Value="{DynamicResource {x:Static nuget:Brushes.ButtonPressedStyleBrushKey}}" />
+          </Trigger>
+        </Style.Triggers>
       </Style>
     </ResourceDictionary>
   </Window.Resources>
@@ -156,10 +158,10 @@
         Margin="0,0,0,4"
         Text="{x:Static nuget:Resources.Text_DirectDependencies}" />
       <DataGrid Grid.Row="1" ItemsSource="{Binding DirectDependencies}" AutoGenerateColumns="False" RowHeaderWidth="0" GridLinesVisibility="None" Background="Transparent" RowBackground="Transparent" BorderBrush="{DynamicResource {x:Static nuget:Brushes.BorderBrush}}"
-                ColumnHeaderStyle="{StaticResource Migrator_DataGridColumnHeaderStyle}">
+                ColumnHeaderStyle="{StaticResource Migrator_DataGridColumnHeaderStyle}" Margin="0,2,0,0">
         <DataGrid.Columns>
-          <DataGridTextColumn x:Name="directDependency_id" Binding="{Binding Id}" Header="Package Id" MinWidth="20" Width="4*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
-          <DataGridTextColumn x:Name="directDependency_version" Binding="{Binding Version}" Header="Version" Width="*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTextColumn x:Name="directDependency_id" Binding="{Binding Id}" Header="{x:Static nuget:Resources.Migrator_PackageIdColumnHeader}" MinWidth="20" Width="4*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTextColumn x:Name="directDependency_version" Binding="{Binding Version}" Header="{x:Static nuget:Resources.Migrator_VersionColumnHeader}" Width="*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
         </DataGrid.Columns>
       </DataGrid>
     </Grid>
@@ -175,16 +177,17 @@
         Margin="0,0,0,4"
         Text="{x:Static nuget:Resources.Text_TransitiveDependencies}" />
       <DataGrid Grid.Row="1" ItemsSource="{Binding TransitiveDependencies}" AutoGenerateColumns="False" RowHeaderWidth="0" GridLinesVisibility="None" Background="Transparent" RowBackground="Transparent"
+                Margin="0,2,0,0"
                 BorderBrush="{DynamicResource {x:Static nuget:Brushes.BorderBrush}}"
                 ColumnHeaderStyle="{StaticResource Migrator_DataGridColumnHeaderStyle}">
         <DataGrid.Columns>
-          <DataGridTextColumn x:Name="transitiveDependency_id" Binding="{Binding Id}" Header="Package Id" MinWidth="20" Width="4*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
-          <DataGridTextColumn x:Name="transitiveDependency_version" Binding="{Binding Version}" Header="Version" Width="*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTextColumn x:Name="transitiveDependency_id" Binding="{Binding Id}" Header="{x:Static nuget:Resources.Migrator_PackageIdColumnHeader}" MinWidth="20" Width="4*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
+          <DataGridTextColumn x:Name="transitiveDependency_version" Binding="{Binding Version}" Header="{x:Static nuget:Resources.Migrator_VersionColumnHeader}" Width="*" IsReadOnly="True" CellStyle="{StaticResource UpgraderDataGridCellStyle}"/>
           <DataGridTemplateColumn CellStyle="{StaticResource UpgraderDataGridCellStyle}" Width="*" IsReadOnly="True">
             <DataGridTemplateColumn.Header>
               <StackPanel Orientation="Horizontal">
-                <CheckBox/>
-                <TextBlock Text="Top-Level" Margin="4,0,0,0"/>
+                <CheckBox IsChecked="False" Checked="PromoteAllToTopLevel_Checked" Unchecked="PromoteAllToTopLevel_Checked"/>
+                <TextBlock Text="{x:Static nuget:Resources.Migrator_TopLevelColumnHeader}" Margin="4,0,0,0"/>
               </StackPanel>
             </DataGridTemplateColumn.Header>
             <DataGridTemplateColumn.HeaderStyle>
@@ -194,8 +197,8 @@
               </Style>
             </DataGridTemplateColumn.HeaderStyle>
             <DataGridTemplateColumn.CellTemplate>
-              <DataTemplate>                
-                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <DataTemplate>
+                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center" IsChecked="{Binding Mode=TwoWay, Path=PromoteToTopLevel, UpdateSourceTrigger=PropertyChanged}"/>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
@@ -203,14 +206,14 @@
       </DataGrid>
     </Grid>
 
-    <Grid x:Name="PackageIssuesGrid" Grid.Row="2" Margin="12,4,12,4">
+    <Grid x:Name="PackageIssuesGrid" Grid.Row="2" Margin="12,8,12,4">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
         <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
 
-      <TextBlock Margin="0,0,4,4" Grid.Row="0" Text="{x:Static nuget:Resources.Text_NuGetUpgradeIssues}" />
+      <TextBlock Margin="0,0,4,8" Grid.Row="0" Text="{x:Static nuget:Resources.Text_NuGetUpgradeIssues}" />
 
       <Border
         Grid.Row="1"
@@ -225,16 +228,16 @@
 
       <ItemsControl
         Grid.Row="1"
-        Visibility="{Binding HasIssues, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"
         IsTabStop="True"
         ItemsSource="{Binding UpgradeDependencyItems}"
+        Visibility="{Binding HasIssues, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"
         Template="{StaticResource StandardItemsControlTemplate}">
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <Expander
               Template="{StaticResource SimpleExpander}"
               Header="{Binding Path=Id}"
-              Visibility="{Binding Path=DependingPackages, Converter={StaticResource EnumerableToVisibilityConverter}}"
+              Visibility="{Binding Path=Issues, Converter={StaticResource EnumerableToVisibilityConverter}}"
               Foreground="{DynamicResource {x:Static nuget:Brushes.UIText}}"
               IsExpanded="True">
               <ItemsControl
