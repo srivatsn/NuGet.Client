@@ -14,7 +14,7 @@
     <!-- We need to update this netcoreassembly build number with every milestone to workaround any breaking api changes we might have made-->
     <NetCoreMajorVersion Condition=" '$(NetCoreMajorVersion)' == '' ">2</NetCoreMajorVersion>
     <NetCoreMinorVersion Condition=" '$(NetCoreMinorVersion)' == '' ">1</NetCoreMinorVersion>
-    <NetCoreAssemblyBuildNumber Condition=" '$(NetCoreAssemblyBuildNumber)' == '' ">1</NetCoreAssemblyBuildNumber>
+    <NetCoreAssemblyBuildNumber Condition=" '$(NetCoreAssemblyBuildNumber)' == '' ">2</NetCoreAssemblyBuildNumber>
     <ReleaseLabel Condition=" '$(ReleaseLabel)' == '' ">netcore.$(NetCoreMajorVersion).$(NetCoreMinorVersion).preview$(NetCoreAssemblyBuildNumber)</ReleaseLabel>
   </PropertyGroup>
 
