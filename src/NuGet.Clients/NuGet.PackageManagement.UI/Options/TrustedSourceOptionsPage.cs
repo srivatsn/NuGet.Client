@@ -17,7 +17,7 @@ namespace NuGet.Options
     [Guid("2819C3B6-FC75-4CD5-8C77-877903DE864C")]
     [ComVisible(true)]
     [ClassInterface(ClassInterfaceType.AutoDual)]
-    public class TrustedSourceOptionsPage : OptionsPageBase
+    public class PackageSourceOptionsPage : OptionsPageBase
     {
         private PackageSourcesOptionsControl _optionsWindow;
 
@@ -31,7 +31,7 @@ namespace NuGet.Options
         protected override void OnApply(PageApplyEventArgs e)
         {
             // Do not need to call base.OnApply() here.
-            var wasApplied = PackageSourcesControl.ApplyChangedSettings();
+            bool wasApplied = PackageSourcesControl.ApplyChangedSettings();
             if (!wasApplied)
             {
                 e.ApplyBehavior = ApplyKind.CancelNoNavigate;

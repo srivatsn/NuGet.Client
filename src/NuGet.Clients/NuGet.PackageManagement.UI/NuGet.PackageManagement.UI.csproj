@@ -96,6 +96,9 @@
     <Compile Include="Options\PackageSourceCheckedListBox.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Options\TrustedSourceOptionsPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Options\PackageSourceOptionsPage.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -106,6 +109,10 @@
       <DependentUpon>PackageSourcesOptionsControl.cs</DependentUpon>
     </Compile>
     <Compile Include="PackageManagerWindowPane.cs" />
+    <Compile Include="PackageSourcesOptionsControl.cs" />
+    <Compile Include="PackageSourcesOptionsControl.Designer.cs">
+      <DependentUpon>PackageSourcesOptionsControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Resources\Domain.cs" />
     <Compile Include="Resources\Resources.xaml.cs">
       <DependentUpon>Resources.xaml</DependentUpon>
@@ -414,6 +421,9 @@
       <DependentUpon>GeneralOptionControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Options\PackageSourcesOptionsControl.resx">
+      <DependentUpon>PackageSourcesOptionsControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PackageSourcesOptionsControl.resx">
       <DependentUpon>PackageSourcesOptionsControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources.resx">
