@@ -151,8 +151,8 @@
         <PackagePath Condition="'$(TargetFramework)' == 'net46'">Desktop</PackagePath>
       </TfmSpecificPackageFile>
       <TfmSpecificPackageFile Include="$(OutputPath)ilmerge\**\$(AssemblyName).resources.dll">
-        <PackagePath Condition="'$(TargetFramework)' == 'netstandard1.3'">CoreCLR</PackagePath>
-        <PackagePath Condition="'$(TargetFramework)' == 'net46'">Desktop</PackagePath>
+        <PackagePath Condition="'$(TargetFramework)' == 'netstandard1.3'">CoreCLR/%(RecursiveDir)</PackagePath>
+        <PackagePath Condition="'$(TargetFramework)' == 'net46'">Desktop/%(RecursiveDir)</PackagePath>
       </TfmSpecificPackageFile>
     </ItemGroup>
     <ItemGroup Condition="'$(IsBuildOnlyXPLATProjects)' == 'true'">
