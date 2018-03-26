@@ -7,9 +7,9 @@ namespace NuGet.Configuration
 {
     public class ClientPolicyProvider : IClientPolicyProvider
     {
-        private Settings _settings;
+        private ISettings _settings;
 
-        public ClientPolicyProvider(Settings settings)
+        public ClientPolicyProvider(ISettings settings)
         {
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
