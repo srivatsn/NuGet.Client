@@ -1,0 +1,56 @@
+name: $(SourceBranchName)-$(Date:yyyyMMdd)-$(rev:rr)
+phases:
+
+- phase: Initialize_Build
+  queue:
+    name: VSEng-MicroBuildVS2017
+    timeoutInMinutes: 60
+    demands: 
+      - DotNetFramework
+      - msbuild
+  
+  steps:  
+  # - task: PowerShell@1
+  #   displayName: "Update Build Number"
+  #   name: "updatebuildnumber"
+  #   inputs:
+  #     scriptType: "inlineScript"
+  #     inlineScript: |
+  #       $revision = Get-Content $env:BUILDCOUNTERFILE
+  #       $newBuildCounter = [System.Decimal]::Parse($revision)
+  #       $newBuildCounter++
+  #       Set-Content $env:BUILDCOUNTERFILE $newBuildCounter
+  #       Write-Host "##vso[build.updatebuildnumber]$newBuildCounter"
+  #       Write-Host "##vso[task.setvariable variable=BuildNumber;isOutput=true]$newBuildCounter"
+
+  - task: PowerShell@1
+    displayName: "Find NuGet.Client Build"
+    inputs:
+      arguments: "-PersonalAccessToken $(VstsPersonalAccessToken)"
+      scriptType: "inlineScript"
+      inlineScript: |
+        Write-Host $env:VstsRestApiRootUrl
+        Write-host $(PersonalAccessToken)
+        $branchName = $env:NUGET_CLIENT_BRANCH
+        $buildNum = $env:NUGET_CLIENT_BUILD_NUMBER
+        $url = '{0}/build/builds?definitions=8117&statusFilter=completed&resultFilter=succeeded,partiallySucceeded&$top=1&tagFilters={1}&buildNumber={2}&api-version=2.0' -f $env:VstsRestApiRootUrl, $branchName, $buildNum
+        Write-Host $url
+        $pat = $(PersonalAccessToken)
+        $Token = ":$pat"
+        $Base64Token = [System.Convert]::ToBase64String([char[]]$Token)
+        $Headers = @{ Authorization = 'Basic {0}' -f $Base64Token; }        
+        $builds = Invoke-RestMethod -Uri $url -Method GET -Headers $Headers
+        Write-Host $builds
+        $desiredBuild =  $builds.value
+        Write-Host $desiredBuild
+        $sourceVersion = $desiredBuild.sourceVersion
+        $buildNum = $desiredBuild.buildNumber
+        Write-Host $sourceVersion, $branchName, $builNum       
+
+  - task: PowerShell@1
+    displayName: "Add Build Tags"
+    inputs:
+      scriptType: "inlineScript"
+      inlineScript: |
+        Write-Host "##vso[build.addbuildtag]$env:BUILD_SOURCEVERSIONAUTHOR"
+        Write-Host "##vso[build.addbuildtag]$env:BUILD_SOURCEBRANCHNAME" 
