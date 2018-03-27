@@ -174,9 +174,9 @@ namespace NuGet.Configuration.Test
         }
 
         [Theory]
-        [InlineData("accept", ClientPolicy.Accept)]
-        [InlineData("require", ClientPolicy.Require)]
-        public void LoadsAndDupesClientPolicyFromNestedSettingsWhenPresent(string policyName, ClientPolicy expectedPolicy)
+        [InlineData(ClientPolicy.Accept, "accept")]
+        [InlineData(ClientPolicy.Require, "require")]
+        public void LoadsAndDupesClientPolicyFromNestedSettingsWhenPresent(ClientPolicy expectedPolicy, string policyName)
         {
             // Arrange
             var nugetConfigPath = "NuGet.Config";
@@ -212,21 +212,47 @@ namespace NuGet.Configuration.Test
   </config>
 </configuration>";
 
+
+            var config3 = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <trustedSources>
+    <nuget.org>
+      <add key=""HASH"" value=""SUBJECT_NAME"" fingerprintAlgorithm=""SHA256"" />
+    </nuget.org>
+  </trustedSources>
+  <config>
+    <add key=""signatureValidationMode"" value=""require"" />
+  </config>
+</configuration>";
+
             using (var mockBaseDirectory = TestDirectory.Create())
-            using (var mockChildDirectory = TestDirectory.Create(mockBaseDirectory))
+            using (var mockFirstChildDirectory = TestDirectory.Create(mockBaseDirectory))
+            using (var mockSecondChildDirectory = TestDirectory.Create(mockBaseDirectory))
             {
                 ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockBaseDirectory, config1);
-                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockChildDirectory, config2);
+                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockFirstChildDirectory, config2);
+                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockSecondChildDirectory, config3);
 
-                var configPaths = new List<string> { Path.Combine(mockChildDirectory, nugetConfigPath), Path.Combine(mockBaseDirectory, nugetConfigPath) };
-                var settings = Settings.LoadSettingsGivenConfigPaths(configPaths);
-                var clientPolicyProvider = new ClientPolicyProvider(settings);
+                var firstConfigPaths = new List<string> { Path.Combine(mockFirstChildDirectory, nugetConfigPath), Path.Combine(mockBaseDirectory, nugetConfigPath) };
+                var firstSettings = Settings.LoadSettingsGivenConfigPaths(firstConfigPaths);
+
+                var secondConfigPaths = new List<string> { Path.Combine(mockSecondChildDirectory, nugetConfigPath), Path.Combine(mockBaseDirectory, nugetConfigPath) };
+                var secondSettings = Settings.LoadSettingsGivenConfigPaths(secondConfigPaths);
+
+                var firstClientPolicyProvider = new ClientPolicyProvider(firstSettings);
+                var secondClientPolicyProvider = new ClientPolicyProvider(secondSettings);
 
                 // Act
-                var clientPolicy = clientPolicyProvider.LoadClientPolicy();
+                var firstClientPolicy = firstClientPolicyProvider.LoadClientPolicy();
+                var secondClientPolicy = secondClientPolicyProvider.LoadClientPolicy();
 
                 // Assert
-                clientPolicy.Should().Be(expectedPolicy);
+                firstClientPolicy.Should().Be(expectedPolicy);
+                secondClientPolicy.Should().Be(ClientPolicy.Require);
             }
         }
 
@@ -674,6 +700,178 @@ namespace NuGet.Configuration.Test
 
                 // Assert
                 clientPolicyProvider.LoadClientPolicy().Should().Be(expectedpolicy);
+            }
+        }
+
+        [Theory]
+        [InlineData("Accept")]
+        [InlineData("Require")]
+        public void DeletesClientPolicy(string policyName)
+        {
+            // Arrange
+            var nugetConfigPath = "NuGet.Config";
+            var config = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <trustedSources>
+    <nuget.org>
+      <add key=""HASH"" value=""SUBJECT_NAME"" fingerprintAlgorithm=""SHA256"" />
+    </nuget.org>
+  </trustedSources>
+  <config>
+    <add key=""signatureValidationMode"" value=""{policyName}"" />
+  </config>
+</configuration>";
+
+            using (var mockBaseDirectory = TestDirectory.Create())
+            {
+                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockBaseDirectory, config);
+                var settings = new Settings(mockBaseDirectory);
+                var clientPolicyProvider = new ClientPolicyProvider(settings);
+
+                // Act
+                clientPolicyProvider.DeleteClientPolicy();
+
+                // Assert
+                var result = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <trustedSources>
+    <nuget.org>
+      <add key=""HASH"" value=""SUBJECT_NAME"" fingerprintAlgorithm=""SHA256"" />
+    </nuget.org>
+  </trustedSources>
+</configuration>";
+
+                Assert.Equal(result.Replace("\r\n", "\n"),
+                    File.ReadAllText(Path.Combine(mockBaseDirectory, nugetConfigPath)).Replace("\r\n", "\n"));
+            }
+        }
+
+        [Theory]
+        [InlineData("Accept")]
+        [InlineData("Require")]
+        public void DeletesClientPolicyFromNestedSettings(string policyName)
+        {
+            // Arrange
+            var nugetConfigPath = "NuGet.Config";
+            var config1 = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <trustedSources>
+    <nuget.org>
+      <add key=""HASH"" value=""SUBJECT_NAME"" fingerprintAlgorithm=""SHA256"" />
+    </nuget.org>
+  </trustedSources>
+  <config>
+    <add key=""signatureValidationMode"" value=""accept"" />
+  </config>
+</configuration>";
+
+            var config2 = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <config>
+    <add key=""signatureValidationMode"" value=""{policyName}"" />
+  </config>
+</configuration>";
+
+            using (var mockBaseDirectory = TestDirectory.Create())
+            using (var mockChildDirectory = TestDirectory.Create(mockBaseDirectory))
+            {
+                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockBaseDirectory, config1);
+                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockChildDirectory, config2);
+
+                var configPaths = new List<string> { Path.Combine(mockChildDirectory, nugetConfigPath), Path.Combine(mockBaseDirectory, nugetConfigPath) };
+                var settings = Settings.LoadSettingsGivenConfigPaths(configPaths);
+                var clientPolicyProvider = new ClientPolicyProvider(settings);
+
+                // Act
+                clientPolicyProvider.DeleteClientPolicy();
+
+                // Assert
+                var result1 = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <trustedSources>
+    <nuget.org>
+      <add key=""HASH"" value=""SUBJECT_NAME"" fingerprintAlgorithm=""SHA256"" />
+    </nuget.org>
+  </trustedSources>
+</configuration>";
+
+                var result2 = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <config>
+    <add key=""signatureValidationMode"" value=""{policyName}"" />
+  </config>
+</configuration>";
+
+                Assert.Equal(result1.Replace("\r\n", "\n"),
+                    File.ReadAllText(Path.Combine(mockBaseDirectory, nugetConfigPath)).Replace("\r\n", "\n"));
+                Assert.Equal(result2.Replace("\r\n", "\n"),
+                    File.ReadAllText(Path.Combine(mockChildDirectory, nugetConfigPath)).Replace("\r\n", "\n"));
+            }
+        }
+
+        [Theory]
+        [InlineData(ClientPolicy.Accept, "Accept")]
+        [InlineData(ClientPolicy.Require, "Require")]
+        public void DeletingClientPolicySetsDefault(ClientPolicy policy, string policyName)
+        {
+            // Arrange
+            var nugetConfigPath = "NuGet.Config";
+            var config = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <add key=""nuget.org"" value=""https://nuget.org"" />
+    <add key=""test.org"" value=""Packages"" />
+  </packageSources>
+  <trustedSources>
+    <nuget.org>
+      <add key=""HASH"" value=""SUBJECT_NAME"" fingerprintAlgorithm=""SHA256"" />
+    </nuget.org>
+  </trustedSources>
+  <config>
+    <add key=""signatureValidationMode"" value=""{policyName}"" />
+  </config>
+</configuration>";
+
+            using (var mockBaseDirectory = TestDirectory.Create())
+            {
+                ConfigurationFileTestUtility.CreateConfigurationFile(nugetConfigPath, mockBaseDirectory, config);
+                var settings = new Settings(mockBaseDirectory);
+                var clientPolicyProvider = new ClientPolicyProvider(settings);
+
+                // Act
+                var previousClientPolicy = clientPolicyProvider.LoadClientPolicy();
+
+                clientPolicyProvider.DeleteClientPolicy();
+
+                var newClientPolicy = clientPolicyProvider.LoadClientPolicy();
+
+                // Assert
+                previousClientPolicy.Should().Be(policy);
+                newClientPolicy.Should().Be(ClientPolicy.Accept);
             }
         }
     }

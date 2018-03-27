@@ -948,8 +948,17 @@ namespace NuGet.Configuration
             {
                 return false;
             }
+
             XElementUtility.RemoveIndented(elementToDelete);
+
+            if (!sectionElement.HasElements)
+            {
+                // clear the section if it is empty
+                DeleteSectionFromRoot(ConfigXDocument.Root, section);
+            }
+
             Save();
+
             return true;
         }
 

@@ -6,19 +6,19 @@ namespace NuGet.Configuration
     public interface IClientPolicyProvider
     {
         /// <summary>
-        /// Loads NuGet package signing client policy.
+        /// Loads NuGet package signing client policy by evaluating all levels of settings.
         /// </summary>
         /// <returns>ClientPolicy.</returns>
         ClientPolicy LoadClientPolicy();
 
         /// <summary>
-        /// Saves NuGet package signing client policy.
+        /// Saves NuGet package signing client policy into the first editable level of settings. 
         /// </summary>
         /// <param name="policy">ClientPolicy to be saved.</param>
         void SaveClientPolicy(ClientPolicy policy);
 
         /// <summary>
-        /// Removes the NuGet package signing client policy.
+        /// Removes the NuGet package signing client policy from the first editable level of settings.
         /// </summary>
         void DeleteClientPolicy();
     }
