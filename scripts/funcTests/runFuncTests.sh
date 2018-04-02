@@ -18,7 +18,7 @@ pushd $DIR
 
 NuGetExe="$DIR/.nuget/nuget.exe"
 #Get NuGet.exe
-curl -o $NuGetExe https://dist.nuget.org/win-x86-commandline/v4.4.1/nuget.exe
+curl -o $NuGetExe https://dist.nuget.org/win-x86-commandline/v4.5.1/nuget.exe
 
 mono --version
 
@@ -36,8 +36,7 @@ curl -o cli/dotnet-install.sh https://raw.githubusercontent.com/dotnet/cli/4bd9b
 
 # Run install.sh
 chmod +x cli/dotnet-install.sh
-# cli/dotnet-install.sh -i cli -c 2.0 --version 2.0.2
-cli/dotnet-install.sh -i cli -c preview --version 1.0.4
+cli/dotnet-install.sh -Channel Master -i cli -Version 2.2.0-preview1-007853
 
 # Display current version
 DOTNET="$(pwd)/cli/dotnet"
