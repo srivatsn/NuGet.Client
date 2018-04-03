@@ -55,9 +55,7 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName, packageVersion);
-
-                // Build before the install check to ensure that everything is up to date.
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceExists(VisualStudio, testContext.Project, packageName, packageVersion, XunitLogger);
                 Utils.AssertPackageInAssetsFile(VisualStudio, testContext.Project, packageName, packageVersion, XunitLogger);
@@ -101,11 +99,10 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName, packageVersion);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UninstallPackageFromPMC(packageName);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceDoesNotExist(VisualStudio, testContext.Project, packageName, packageVersion, XunitLogger);
                 Utils.AssertPackageNotInAssetsFile(VisualStudio, testContext.Project, packageName, packageVersion, XunitLogger);
@@ -152,11 +149,10 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName, packageVersion1);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UpdatePackageFromPMC(packageName, packageVersion2);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceExists(VisualStudio, testContext.Project, packageName, packageVersion2, XunitLogger);
                 Utils.AssertPackageInAssetsFile(VisualStudio, testContext.Project, packageName, packageVersion2, XunitLogger);
@@ -207,11 +203,10 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName1, packageVersion1);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.InstallPackageFromPMC(packageName2, packageVersion2);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceExists(VisualStudio, testContext.Project, packageName1, packageVersion1, XunitLogger);
                 Utils.AssertPackageReferenceExists(VisualStudio, testContext.Project, packageName2, packageVersion2, XunitLogger);
@@ -268,16 +263,14 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName1, packageVersion1);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.InstallPackageFromPMC(packageName2, packageVersion2);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UninstallPackageFromPMC(packageName1);
                 nugetConsole.UninstallPackageFromPMC(packageName2);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceDoesNotExist(VisualStudio, testContext.Project, packageName1, packageVersion1, XunitLogger);
                 Utils.AssertPackageReferenceDoesNotExist(VisualStudio, testContext.Project, packageName2, packageVersion2, XunitLogger);
@@ -307,19 +300,15 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName1, packageVersion1);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.InstallPackageFromPMC(packageName2, packageVersion2);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UninstallPackageFromPMC(packageName1);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UninstallPackageFromPMC(packageName2);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssetPackageNotInPackagesConfig(VisualStudio, testContext.Project, packageName1, packageVersion1, XunitLogger);
@@ -345,11 +334,10 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(packageName, packageVersion2);
-                testContext.Project.Build();
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UpdatePackageFromPMC(packageName, packageVersion1);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceExists(VisualStudio, testContext.Project, packageName, packageVersion1, XunitLogger);
                 Utils.AssertPackageInAssetsFile(VisualStudio, testContext.Project, packageName, packageVersion1, XunitLogger);

@@ -197,7 +197,7 @@ namespace NuGet.Tests.Apex
                 testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 nugetConsole.UpdatePackageFromPMC(signedPackage.Id, packageVersion09);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceExists(VisualStudio, testContext.Project, signedPackage.Id, packageVersion09, XunitLogger);
             }
@@ -249,7 +249,7 @@ namespace NuGet.Tests.Apex
                 var nugetConsole = GetConsole(testContext.Project);
 
                 nugetConsole.InstallPackageFromPMC(signedPackage.Id, signedPackage.Version);
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 // TODO: Fix bug where no warnings are shwon when package is untrusted but still installed
                 //nugetConsole.IsMessageFoundInPMC("expired certificate").Should().BeTrue("expired certificate warning");
@@ -299,7 +299,7 @@ namespace NuGet.Tests.Apex
 
                 nugetConsole.InstallPackageFromPMC(signedPackage.Id, signedPackage.Version);
                 nugetConsole.IsMessageFoundInPMC("package integrity check failed").Should().BeTrue("Integrity failed message shown.");
-                testContext.Project.Build();
+                testContext.NuGetApexTestService.WaitForAutoRestore();
 
                 Utils.AssertPackageReferenceDoesNotExist(VisualStudio, testContext.Project, signedPackage.Id, signedPackage.Version, XunitLogger);
             }
