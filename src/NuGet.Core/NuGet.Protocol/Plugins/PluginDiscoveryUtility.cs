@@ -9,12 +9,6 @@ namespace NuGet.Protocol.Plugins
     {
         public static string InternalPluginDiscoveryRoot { get; set; } = null;
 
-#if IS_DESKTOP
-        private static string NuGetPluginPattern = "*NuGet.Plugin.exe";
-#else
-        private static string NuGetPluginPattern = "*NuGet.Plugin.dll";
-#endif
-
         public static string GetInternalPlugins()
         {
             var rootDirectory = InternalPluginDiscoveryRoot;
@@ -33,9 +27,9 @@ namespace NuGet.Protocol.Plugins
             return Path.Combine(nuGetHome,
                 "plugins",
 #if IS_DESKTOP
-                "netframework"
+                "netfx"
 #else
-                "dotnet"
+                "netcore"
 #endif
                 );
         }
@@ -45,7 +39,22 @@ namespace NuGet.Protocol.Plugins
             var paths = new List<string>();
             foreach (var directory in directories.Where(Directory.Exists))
             {
-                paths.AddRange(Directory.EnumerateFiles(directory, NuGetPluginPattern, SearchOption.TopDirectoryOnly));
+                var pluginDirectories = Directory.GetDirectories(directory);
+
+                foreach (var pluginDirectory in pluginDirectories)
+                {
+#if IS_DESKTOP
+                    var expectedPluginName = Path.Combine(pluginDirectory, Path.GetFileName(pluginDirectory) + ".exe");
+#else
+                    var expectedPluginName = Path.Combine(pluginDirectory, Path.GetFileName(pluginDirectory) + ".dll");
+#endif
+
+                    var filesInDirectory = Directory.EnumerateFiles(pluginDirectory);
+                    if (filesInDirectory.Contains(expectedPluginName, PathUtility.GetStringComparerBasedOnOS()))
+                    {
+                        paths.Add(expectedPluginName);
+                    }
+                }
             }
 
             return paths;
