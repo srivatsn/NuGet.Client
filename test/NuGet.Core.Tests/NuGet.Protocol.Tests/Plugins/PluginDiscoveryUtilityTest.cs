@@ -76,5 +76,19 @@ namespace NuGet.Protocol.Plugins.Tests
                 }
             }
         }
+
+        [Fact]
+        public void PluginDiscoveryUtilityGetsNuGetHomePluginPath()
+        {
+            var result = PluginDiscoveryUtility.GetNuGetHomePluginsPath();
+
+            Assert.Contains(Path.Combine(".nuget", "plugins",
+#if IS_DESKTOP
+                "netfx"
+#else
+                "netcore"
+#endif
+                ), result);
+        }
     }
 }
