@@ -81,7 +81,7 @@ namespace NuGet.CommandLine
         private Lazy<string> MsBuildDirectory {
             get
             {
-                if (_defaultMsBuildDirectory != null)
+                if (_defaultMsBuildDirectory == null)
                 {
                     _defaultMsBuildDirectory = MsBuildUtility.GetMsBuildDirectoryFromMsBuildPath(null, null, Console);
 
