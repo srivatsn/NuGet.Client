@@ -11,13 +11,9 @@ namespace NuGet.Protocol.Plugins
 
         public static string GetInternalPlugins()
         {
-            var rootDirectory = InternalPluginDiscoveryRoot;
+            var rootDirectory = InternalPluginDiscoveryRoot ?? System.Reflection.Assembly.GetEntryAssembly().Location;
 
-            if (InternalPluginDiscoveryRoot == null)
-            {
-                rootDirectory = System.Reflection.Assembly.GetEntryAssembly().Location;
-            }
-            return Path.GetDirectoryName(rootDirectory);
+            return rootDirectory ?? Path.GetDirectoryName(rootDirectory);
         }
 
         public static string GetNuGetHomePluginsPath()
