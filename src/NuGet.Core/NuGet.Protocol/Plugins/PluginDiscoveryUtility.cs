@@ -11,12 +11,8 @@ namespace NuGet.Protocol.Plugins
 
         public static string GetInternalPlugins()
         {
-            var rootDirectory = InternalPluginDiscoveryRoot ??
-#if IS_DESKTOP
-    System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
-#else
-    System.Reflection.Assembly.GetEntryAssembly().Location;
-#endif
+            var rootDirectory = InternalPluginDiscoveryRoot ?? System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+
             return rootDirectory ?? Path.GetDirectoryName(rootDirectory);
         }
 
