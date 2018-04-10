@@ -48,7 +48,7 @@ namespace NuGet.Protocol.Plugins.Tests
             }
         }
 
-        [PlatformTheory(Platform.Linux, Platform.Darwin)]
+        [PlatformTheory(Platform.Linux)]
         [InlineData("VSTSCredProv", "VSTSCredProv", "vstscredprov", true)] // first matching
         [InlineData("VSTSCredProv", "vstscredProv", "vstscredprov", false)] // none matching
         [InlineData("VSTSCredProv", "vstscredProv", "VSTSCredProv", true)] // second matching
