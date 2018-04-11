@@ -53,6 +53,7 @@ phases:
       NonRTM:
         BuildRTM: "false"
     demands: 
+      - Agent.Name -equals DDMBLDW131
       - DotNetFramework
       - msbuild
 
